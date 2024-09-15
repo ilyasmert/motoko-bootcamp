@@ -1,22 +1,28 @@
+import Buffer "mo:base/Buffer";
+import Text "mo:base/Text";
 actor {
 
+    let name : Text = "HouseExpense";
+    var manifesto : Text = "Let's track the expenses of our house";
+    var goals = Buffer.Buffer<Text>(0);
+
     public shared query func getName() : async Text {
-        return "Not implemented";
+        return name;
     };
 
     public shared query func getManifesto() : async Text {
-        return "Not implemented";
+        return manifesto;
     };
 
     public func setManifesto(newManifesto : Text) : async () {
-        return;
+        manifesto := newManifesto;
     };
 
     public func addGoal(newGoal : Text) : async () {
-        return;
+        goals.add(newGoal);
     };
 
     public shared query func getGoals() : async [Text] {
-        return [];
+        return Buffer.toArray<Text>(goals);
     };
 };
