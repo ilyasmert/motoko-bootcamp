@@ -22,22 +22,31 @@ actor {
         type HttpResponse = Types.HttpResponse;
 
         // The principal of the Webpage canister associated with this DAO canister (needs to be updated with the ID of your Webpage canister)
-        stable let canisterIdWebpage : Principal = Principal.fromText("aaaaa-aa");
-        stable var manifesto = "Your manifesto";
-        stable let name = "Your DAO";
-        stable var goals = ["my goal"];
+        stable let canisterIdWebpage : Principal = Principal.fromText("z7chj-7qaaa-aaaab-qacbq-cai");
+        stable var manifesto = "Let's graduate!";
+        stable let name = "Abrek DAO";
+        stable var goals = ["have fun"];
 
         var proposalID : Nat = 0;
 
         let members = HashMap.HashMap<Principal, Member>(0, Principal.equal, Principal.hash);
         let proposals = HashMap.HashMap<ProposalId, Proposal>(0, Nat.equal, Hash.hash);
 
-        let MBToken = actor("bkyz2-fmaaa-aaaaa-qaaaq-cai") : actor {
+        let MBToken = actor("jaamb-mqaaa-aaaaj-qa3ka-cai") : actor {
                 mint : (owner : Principal, amount : Nat) -> async Result.Result<(), Text>;
                 burn : (owner : Principal, amount : Nat) -> async Result.Result<(), Text>;
                 transfer : (from : Principal, to : Principal, amount : Nat) -> async Result.Result<(), Text>;
                 balanceOf : (owner : Principal) -> async Nat;
         };
+
+        let firstMember : Member = {
+                name = "motoko_bootcamp";
+                role = #Mentor;
+        };
+
+        let firstMemberPrincipal = Principal.fromText("nkqop-siaaa-aaaaj-qa3qq-cai");
+
+        members.put(firstMemberPrincipal, firstMember);
 
         // Returns the name of the DAO
         public query func getName() : async Text {
@@ -245,7 +254,7 @@ actor {
                                                 };
 
                                                 let balance = await MBToken.balanceOf(caller);
-                                                let votingPower = switch(member.role) {
+                                                let votePower = switch(member.role) {
                                                         case(#Graduate) {
                                                                 balance;
                                                         };
@@ -261,7 +270,7 @@ actor {
                                                 } else {
                                                         -1;
                                                 };
-                                                let votingScore = votingPower * votingMultiplier;
+                                                let votingScore = votePower * votingMultiplier;
                                                 let newVoteScore = proposal.voteScore + votingScore;
                                                 var executeTime : ?Time.Time = null;
                                                 let newStatus = if (newVoteScore >= 100) {
@@ -272,6 +281,14 @@ actor {
                                                         #Open;
                                                 };
 
+                                                let votesBuffer = Buffer.fromArray<Vote>(proposal.votes);
+                                                let newVote : Vote = {
+                                                        member = caller;
+                                                        votingPower = votePower;
+                                                        yesOrNo;
+                                                };
+                                                votesBuffer.add(newVote);
+
                                                 switch(newStatus) {
                                                         case(#Accepted) {
                                                                 executeProposal(proposal.content);
@@ -279,11 +296,24 @@ actor {
                                                         };
                                                         case(_) {};
                                                 };
+
+                                                let newProposal : Proposal = {
+                                                        id = proposal.id;
+                                                        content = proposal.content;
+                                                        creator = proposal.creator;
+                                                        created = proposal.created;
+                                                        executed = executeTime;
+                                                        votes = Buffer.toArray<Vote>(votesBuffer);
+                                                        voteScore = newVoteScore;
+                                                        status = newStatus;
+                                                };
+
+                                                proposals.put(proposalId, newProposal);
+                                                return #ok();
                                         };
                                 };
                         };
                 };
-                return #ok();
         };
 
         // Returns the Principal ID of the Webpage canister associated with this DAO canister
